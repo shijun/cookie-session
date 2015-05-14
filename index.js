@@ -63,14 +63,15 @@ module.exports = function(opts){
         debug('parse %s', json);
         try {
           sess = new Session(req, opts.encrypted ?
-            encryption.decrypt(keys[0], keys[1], json) : decode(json));
+            JSON.parse(encryption.decrypt(keys[0], keys[1], json)) :
+            decode(json));
         } catch (err) {
           // backwards compatibility:
           // create a new session if parsing fails.
           // new Buffer(string, 'base64') does not seem to crash
           // when `string` is not base64-encoded.
           // but `JSON.parse(string)` will crash.
-          debug('error occurred during decryption');
+          debug('error occurred during decryption %s', e.message);
           sess = new Session(req);
         }
       } else {
@@ -160,7 +161,7 @@ Session.prototype.changed = function(keys, prev){
   if (!prev) return true;
   var opts = this._ctx.sessionOptions;
   this._json = opts.encrypted ?
-    encryption.encrypt(keys[0], keys[1], this) : encode(this);
+    encryption.encrypt(keys[0], keys[1], JSON.stringify(this)) : encode(this);
   return this._json != prev;
 };
 
@@ -199,7 +200,7 @@ Session.prototype.save = function(){
   var keys = ctx.sessionEncryptionKeys;
 
   var encoded = opts.encrypted ?
-    encryption.encrypt(keys[0], keys[1], this) : encode(this);
+    encryption.encrypt(keys[0], keys[1], JSON.stringify(this)) : encode(this);
   var json = this._json || encoded;
   var name = ctx.sessionKey;
 
