@@ -7,6 +7,7 @@
 var debug = require('debug')('cookie-session');
 var Cookies = require('cookies');
 var onHeaders = require('on-headers');
+var encryption = require('./encryption');
 
 /**
  * Create a new cookie session middleware.
@@ -61,9 +62,8 @@ module.exports = function(opts){
       if (json) {
         debug('parse %s', json);
         try {
-          // FIXME
-          sess = new Session(req,
-            opts.encrypted ? decrypt(keys[0], keys[1], json) : decode(json));
+          sess = new Session(req, opts.encrypted ?
+            encryption.decrypt(keys[0], keys[1], json) : decode(json));
         } catch (err) {
           // backwards compatibility:
           // create a new session if parsing fails.
@@ -159,8 +159,8 @@ Session.prototype.toJSON = function(){
 Session.prototype.changed = function(keys, prev){
   if (!prev) return true;
   var opts = this._ctx.sessionOptions;
-  // FIXME
-  this._json = opts.encrypted ? encrypt(keys[0], keys[1], this) : encode(this);
+  this._json = opts.encrypted ?
+    encryption.encrypt(keys[0], keys[1], this) : encode(this);
   return this._json != prev;
 };
 
@@ -197,9 +197,9 @@ Session.prototype.save = function(){
   var ctx = this._ctx;
   var opts = ctx.sessionOptions;
   var keys = ctx.sessionEncryptionKeys;
-  // FIXME
+
   var encoded = opts.encrypted ?
-    encrypt(keys[0], keys[1], this) : encode(this);
+    encryption.encrypt(keys[0], keys[1], this) : encode(this);
   var json = this._json || encoded;
   var name = ctx.sessionKey;
 
@@ -231,35 +231,5 @@ function decode(string) {
 function encode(body) {
   body = JSON.stringify(body);
   return new Buffer(body).toString('base64');
-}
-
-/**
- * Decrypt the base64 cookie value to an object.
- *
- * @param {Buffer[]} keys - key[0] is used for decryption. There is no support
- *                   multiple keys.
- * @param {String} string
- * @return {Object}
- * @public
- */
-
-function decrypt(cryptKey, hmacKey, string) {
-  // FIXME: stub
-  return JSON.parse(string);
-}
-
-/**
- * Encrypt an object into a base64 AES256-encrypted JSON string.
- *
- * @param {Buffer[]} keys - key[0] is used for encryption. There is no support
- *                   multiple keys.
- * @param {Object} body
- * @return {String}
- * @public
- */
-
-function encrypt(cryptKey, hmacKey, body) {
-  // FIXME: stub
-  return JSON.stringify(body);
 }
 
