@@ -31,8 +31,6 @@ module.exports = cookieSession
  * @param {array} [options.keys]
  * @param {string} [options.name=session] Name of the cookie to use
  * @param {boolean} [options.overwrite=true]
- * @param {string} [options.secret]
- * @param {boolean} [options.signed=true]
  * @return {function} middleware
  * @public
  */
@@ -45,14 +43,15 @@ function cookieSession(options) {
 
   // secrets
   var keys = opts.keys;
-  if (!keys && opts.secret) keys = [opts.secret];
 
   // defaults
   if (null == opts.overwrite) opts.overwrite = true;
   if (null == opts.httpOnly) opts.httpOnly = true;
-  if (null == opts.signed) opts.signed = true;
+  if (null == opts.encrypted) opts.encrypted = true;
 
-  if (!keys && opts.signed) throw new Error('.keys required.');
+  if (opts.encrypted && (keys == null || keys.length < 2)) {
+    throw new Error('.keys required.');
+  }
 
   debug('session options %j', opts);
 
@@ -63,6 +62,7 @@ function cookieSession(options) {
     // to pass to Session()
     req.sessionOptions = Object.create(opts)
     req.sessionKey = name
+    req.sessionEncryptionKeys = keys
 
     req.__defineGetter__('session', function getSession() {
       // already retrieved
@@ -155,8 +155,9 @@ Session.create = function create(req, obj) {
 
 Session.deserialize = function deserialize(req, str) {
   var ctx = new SessionContext(req)
-  var obj = decode(str)
+  var keys = ctx.sessionEncryptionKeys
 
+  var obj = decrypt(keys[0], keys[1], str)
   ctx._new = false
   ctx._val = str
 
@@ -169,7 +170,8 @@ Session.deserialize = function deserialize(req, str) {
  */
 
 Session.serialize = function serialize(sess) {
-  return encode(sess)
+  var keys = ctx.sessionEncryptionKeys
+  return encrypt(keys[0], keys[1], sess)
 }
 
 /**
@@ -317,3 +319,34 @@ function tryGetSession(req) {
     return undefined
   }
 }
+
+/**
+ * Decrypt the base64 cookie value to an object.
+ *
+ * @param {Buffer[]} keys - key[0] is used for decryption. There is no support
+ *                   multiple keys.
+ * @param {String} string
+ * @return {Object}
+ * @public
+ */
+
+function decrypt(cryptKey, hmacKey, string) {
+  // FIXME: stub
+  return decode(string);
+}
+
+/**
+ * Encrypt an object into a base64 AES256-encrypted JSON string.
+ *
+ * @param {Buffer[]} keys - key[0] is used for encryption. There is no support
+ *                   multiple keys.
+ * @param {Object} body
+ * @return {String}
+ * @public
+ */
+
+function encrypt(cryptKey, hmacKey, body) {
+  // FIXME: stub
+  return encode(body);
+}
+
