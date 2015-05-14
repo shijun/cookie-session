@@ -16,8 +16,6 @@ var onHeaders = require('on-headers');
  * @param {array} [opts.keys]
  * @param {string} [opts.name=express:sess] Name of the cookie to use
  * @param {boolean} [opts.overwrite]
- * @param {string} [opts.secret]
- * @param {boolean} [opts.signed]
  * @return {function} middleware
  * @public
  */
@@ -30,24 +28,26 @@ module.exports = function(opts){
 
   // secrets
   var keys = opts.keys;
-  if (!keys && opts.secret) keys = [opts.secret];
 
   // defaults
   if (null == opts.overwrite) opts.overwrite = true;
   if (null == opts.httpOnly) opts.httpOnly = true;
-  if (null == opts.signed) opts.signed = true;
+  if (null == opts.encrypted) opts.encrypted = true;
 
-  if (!keys && opts.signed) throw new Error('.keys required.');
+  if (opts.encrypted && (keys == null || keys.length < 2)) {
+    throw new Error('.keys required.');
+  }
 
   debug('session options %j', opts);
 
   return function cookieSession(req, res, next){
-    var cookies = req.sessionCookies = new Cookies(req, res, keys);
+    var cookies = req.sessionCookies = new Cookies(req, res);
     var sess, json;
 
     // to pass to Session()
     req.sessionOptions = opts;
     req.sessionKey = name;
+    req.sessionEncryptionKeys = keys;
 
     req.__defineGetter__('session', function(){
       // already retrieved
@@ -61,7 +61,9 @@ module.exports = function(opts){
       if (json) {
         debug('parse %s', json);
         try {
-          sess = new Session(req, decode(json));
+          // FIXME
+          sess = new Session(req,
+            opts.encrypted ? decrypt(keys[0], keys[1], json) : decode(json));
         } catch (err) {
           // backwards compatibility:
           // create a new session if parsing fails.
@@ -97,7 +99,7 @@ module.exports = function(opts){
           cookies.set(name, '', opts);
         } else if (!json && !sess.length) {
           // do nothing if new and not populated
-        } else if (sess.changed(json)) {
+        } else if (sess.changed(keys, json)) {
           // save
           sess.save();
         }
@@ -154,9 +156,11 @@ Session.prototype.toJSON = function(){
  * @private
  */
 
-Session.prototype.changed = function(prev){
+Session.prototype.changed = function(keys, prev){
   if (!prev) return true;
-  this._json = encode(this);
+  var opts = this._ctx.sessionOptions;
+  // FIXME
+  this._json = opts.encrypted ? encrypt(keys[0], keys[1], this) : encode(this);
   return this._json != prev;
 };
 
@@ -191,8 +195,12 @@ Session.prototype.__defineGetter__('populated', function(){
 
 Session.prototype.save = function(){
   var ctx = this._ctx;
-  var json = this._json || encode(this);
   var opts = ctx.sessionOptions;
+  var keys = ctx.sessionEncryptionKeys;
+  // FIXME
+  var encoded = opts.encrypted ?
+    encrypt(keys[0], keys[1], this) : encode(this);
+  var json = this._json || encoded;
   var name = ctx.sessionKey;
 
   debug('save %s', json);
@@ -224,3 +232,34 @@ function encode(body) {
   body = JSON.stringify(body);
   return new Buffer(body).toString('base64');
 }
+
+/**
+ * Decrypt the base64 cookie value to an object.
+ *
+ * @param {Buffer[]} keys - key[0] is used for decryption. There is no support
+ *                   multiple keys.
+ * @param {String} string
+ * @return {Object}
+ * @public
+ */
+
+function decrypt(cryptKey, hmacKey, string) {
+  // FIXME: stub
+  return JSON.parse(string);
+}
+
+/**
+ * Encrypt an object into a base64 AES256-encrypted JSON string.
+ *
+ * @param {Buffer[]} keys - key[0] is used for encryption. There is no support
+ *                   multiple keys.
+ * @param {Object} body
+ * @return {String}
+ * @public
+ */
+
+function encrypt(cryptKey, hmacKey, body) {
+  // FIXME: stub
+  return JSON.stringify(body);
+}
+
