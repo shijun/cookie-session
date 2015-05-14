@@ -24,7 +24,8 @@
     "HISTORY.md",
     "LICENSE",
     "README.md",
-    "index.js"
+    "index.js",
+    "encryption.js"
   ],
   "license": "MIT",
   "scripts": {
