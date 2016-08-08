@@ -169,8 +169,8 @@ Session.deserialize = function deserialize(req, str) {
  */
 
 Session.serialize = function serialize(sess) {
-  var keys = ctx.sessionEncryptionKeys
-  return encode(sess, keys)
+  var ctx = new SessionContext(req)
+  return encode(sess, ctx.sessionEncryptionKeys)
 }
 
 /**
