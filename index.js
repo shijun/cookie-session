@@ -57,7 +57,7 @@ function cookieSession(options) {
   debug('session options %j', opts);
 
   return function _cookieSession(req, res, next) {
-    var cookies = req.sessionCookies = new Cookies(req, res, keys);
+    var cookies = req.sessionCookies = new Cookies(req, res);
     var sess
 
     // to pass to Session()
@@ -156,7 +156,7 @@ Session.create = function create(req, obj) {
 
 Session.deserialize = function deserialize(req, str) {
   var ctx = new SessionContext(req)
-  var obj = decode(str, ctx.sessionEncryptionKeys)
+  var obj = decode(str, req.sessionEncryptionKeys)
   ctx._new = false
   ctx._val = str
 
@@ -169,8 +169,7 @@ Session.deserialize = function deserialize(req, str) {
  */
 
 Session.serialize = function serialize(sess) {
-  var ctx = new SessionContext(req)
-  return encode(sess, ctx.sessionEncryptionKeys)
+  return encode(sess, sess._ctx.req.sessionEncryptionKeys)
 }
 
 /**
