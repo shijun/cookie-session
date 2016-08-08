@@ -277,7 +277,7 @@ function createSession(req) {
  */
 
 function decode(string, keys) {
-  var body = encryption.decrypt(keys[0], keys[1], str)
+  var body = encryption.decrypt(keys[0], keys[1], string)
   return JSON.parse(body)
 }
 
