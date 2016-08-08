@@ -158,7 +158,7 @@ Session.deserialize = function deserialize(req, str) {
   var ctx = new SessionContext(req)
   var obj = decode(str, req.sessionEncryptionKeys)
   ctx._new = false
-  ctx._val = str
+  ctx._original = JSON.stringify(obj)
 
   return new Session(ctx, obj)
 }
@@ -181,7 +181,7 @@ Session.serialize = function serialize(sess) {
 
 Object.defineProperty(Session.prototype, 'isChanged', {
   get: function getIsChanged() {
-    return this._ctx._new || this._ctx._val !== Session.serialize(this)
+    return this._ctx._new || this._ctx._original !== JSON.stringify(this)
   }
 })
 
