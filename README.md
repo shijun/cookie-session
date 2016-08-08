@@ -46,11 +46,6 @@ The name of the cookie to set, defaults to `session`.
 Keys with which to encrypt and sign the cookie. The first key is used for
 encryption, the second for signing.
 
-##### encrypted
-
-Encrypt and sign the cookie contents with AES-256 and HMAC-SHA256
-(respectively) using the provided keys.
-
 ##### Cookie Options
 
 Other options are passed to `cookies.get()` and `cookies.set()` allowing you
