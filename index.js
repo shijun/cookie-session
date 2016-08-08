@@ -238,7 +238,7 @@ Session.prototype.save = function save() {
   var name = ctx.req.sessionKey
   var opts = ctx.req.sessionOptions
 
-  debug('save %s', val)
+  debug('saving session...')
   cookies.set(name, val, opts)
 }
 
@@ -291,7 +291,12 @@ function decode(string, keys) {
 
 function encode(body, keys) {
   var str = JSON.stringify(body)
-  return encryption.encrypt(keys[0], keys[1], str)
+  var encrypted = encryption.encrypt(keys[0], keys[1], str)
+
+  debug('plaintext size: ' + str.length)
+  debug('ciphertext size: ' + encrypted.length)
+
+  return encrypted
 }
 
 /**
@@ -310,10 +315,10 @@ function tryGetSession(req) {
     return undefined
   }
 
-  debug('parse %s', str)
-
   try {
-    return Session.deserialize(req, str)
+    var obj = Session.deserialize(req, str)
+    debug('cookie content: ' + JSON.stringify(obj, null, 2))
+    return obj
   } catch (err) {
     if (!(err instanceof SyntaxError)) throw err
     return undefined
