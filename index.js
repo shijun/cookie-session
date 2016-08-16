@@ -48,9 +48,8 @@ function cookieSession(options) {
   // defaults
   if (null == opts.overwrite) opts.overwrite = true;
   if (null == opts.httpOnly) opts.httpOnly = true;
-  if (null == opts.encrypted) opts.encrypted = true;
 
-  if (opts.encrypted && (keys == null || keys.length < 2)) {
+  if (keys == null || keys.length < 2) {
     throw new Error('.keys required.');
   }
 
