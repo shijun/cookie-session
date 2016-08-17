@@ -295,7 +295,7 @@ function encode(body, keys) {
   debug('plaintext size: ' + str.length)
   debug('ciphertext size: ' + encrypted.length)
 
-  return encrypted
+  return (encrypted.length > 4093) ? 'error: too large' : encrypted
 }
 
 /**
@@ -310,7 +310,7 @@ function tryGetSession(req) {
 
   var str = cookies.get(name, opts)
 
-  if (!str) {
+  if (str == null || str === 'error: too large') {
     return undefined
   }
 
