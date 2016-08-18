@@ -310,7 +310,7 @@ function tryGetSession(req) {
 
   var str = cookies.get(name, opts)
 
-  if (str == null || str === 'error: too large') {
+  if (!str || str === 'error: too large') {
     return undefined
   }
 
