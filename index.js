@@ -32,6 +32,8 @@ module.exports = cookieSession
  * @param {array} [options.keys]
  * @param {string} [options.name=session] Name of the cookie to use
  * @param {boolean} [options.overwrite=true]
+ * @param {string} [options.secret]
+ * @param {boolean} [options.signed=true]
  * @return {function} middleware
  * @public
  */
@@ -44,25 +46,29 @@ function cookieSession(options) {
 
   // secrets
   var keys = opts.keys;
+  if (!keys && opts.secret) keys = [opts.secret];
 
   // defaults
   if (null == opts.overwrite) opts.overwrite = true;
   if (null == opts.httpOnly) opts.httpOnly = true;
+  if (null == opts.signed) opts.signed = true;
 
-  if (keys == null || keys.length < 2) {
-    throw new Error('.keys required.');
+  if (!keys && opts.signed) throw new Error('.keys required.');
+
+  if (opts.encryptionKeys == null || opts.encryptionKeys.length < 2) {
+    throw new Error('.encryptionKeys required.');
   }
 
   debug('session options %j', opts);
 
   return function _cookieSession(req, res, next) {
-    var cookies = req.sessionCookies = new Cookies(req, res);
+    var cookies = req.sessionCookies = new Cookies(req, res, keys);
     var sess
 
     // to pass to Session()
     req.sessionOptions = Object.create(opts)
     req.sessionKey = name
-    req.sessionEncryptionKeys = keys
+    req.sessionEncryptionKeys = opts.encryptionKeys
 
     req.__defineGetter__('session', function getSession() {
       // already retrieved

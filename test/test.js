@@ -51,12 +51,12 @@ describe('Cookie Session', function(){
     })
   })
 
-  describe('when options.encrypted = false', function(){
+  describe('when options.signed = false', function(){
     describe('when app.keys are not set', function(){
       it('should work', function(done){
         var app = connect();
         app.use(session({
-          encrypted: false
+          signed: false
         }));
         app.use(function (req, res, next) {
           req.session.message = 'hi';
