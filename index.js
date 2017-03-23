@@ -163,7 +163,9 @@ Session.deserialize = function deserialize(req, str) {
   var ctx = new SessionContext(req)
   var obj = decode(str, req.sessionEncryptionKeys)
   ctx._new = false
-  ctx._original = JSON.stringify(obj)
+  ctx._val = JSON.stringify(obj)
+
+  debug('cookie content: ' + JSON.stringify(obj, null, 2))
 
   return new Session(ctx, obj)
 }
@@ -186,7 +188,7 @@ Session.serialize = function serialize(sess) {
 
 Object.defineProperty(Session.prototype, 'isChanged', {
   get: function getIsChanged() {
-    return this._ctx._new || this._ctx._original !== JSON.stringify(this)
+    return this._ctx._new || this._ctx._val !== JSON.stringify(this)
   }
 })
 
@@ -298,9 +300,6 @@ function encode(body, keys) {
   var str = JSON.stringify(body)
   var encrypted = encryption.encrypt(keys[0], keys[1], str)
 
-  debug('plaintext size: ' + str.length)
-  debug('ciphertext size: ' + encrypted.length)
-
   return (encrypted.length > 4093) ? 'error: too large' : encrypted
 }
 
@@ -321,9 +320,7 @@ function tryGetSession(req) {
   }
 
   try {
-    var obj = Session.deserialize(req, str)
-    debug('cookie content: ' + JSON.stringify(obj, null, 2))
-    return obj
+    return Session.deserialize(req, str)
   } catch (err) {
     if (!(err instanceof SyntaxError)) throw err
     return undefined

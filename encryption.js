@@ -1,4 +1,5 @@
-var crypto = require('crypto');
+const crypto = require('crypto');
+const debug = require('debug')('cookie-session');
 
 
 /**
@@ -80,6 +81,9 @@ exports.encrypt = function(cryptKey, hmacKey, plaintext) {
   var initVector = crypto.randomBytes(16);
   var ciphertext = _generateCiphertext(cryptKey, initVector, plaintext);
   var hmac = _generateHmac(hmacKey, ciphertext);
+
+  debug('plaintext size: ' + plaintext.length);
+  debug('ciphertext size: ' + ciphertext.length);
 
   return Buffer.concat([
     initVector,
