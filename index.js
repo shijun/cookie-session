@@ -107,16 +107,12 @@ function cookieSession(options) {
         return;
       }
 
-      try {
-        if (sess === false) {
-          // remove
-          cookies.set(name, '', req.sessionOptions)
-        } else if ((!sess.isNew || sess.isPopulated) && sess.isChanged) {
-          // save populated or non-new changed session
-          sess.save()
-        }
-      } catch (e) {
-        debug('error saving session %s', e.message)
+      if (sess === false) {
+        // remove
+        cookies.set(name, '', req.sessionOptions)
+      } else if ((!sess.isNew || sess.isPopulated) && sess.isChanged) {
+        // save populated or non-new changed session
+        sess.save()
       }
     });
 
@@ -300,7 +296,11 @@ function encode(body, keys) {
   var str = JSON.stringify(body)
   var encrypted = encryption.encrypt(keys[0], keys[1], str)
 
-  return (encrypted.length > 4093) ? 'error: too large' : encrypted
+  if (encrypted.length > 4093) {
+    throw new Error('cookie session is too large')
+  } else {
+    return encrypted
+  }
 }
 
 /**
@@ -315,15 +315,10 @@ function tryGetSession(req) {
 
   var str = cookies.get(name, opts)
 
-  if (!str || str === 'error: too large') {
+  if (!str) {
     return undefined
   }
 
-  try {
-    return Session.deserialize(req, str)
-  } catch (err) {
-    if (!(err instanceof SyntaxError)) throw err
-    return undefined
-  }
+  return Session.deserialize(req, str)
 }
 
